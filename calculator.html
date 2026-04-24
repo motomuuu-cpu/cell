@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>かわいい電卓</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #fce4ec, #e1bee7, #b3e5fc);
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .wrapper {
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    /* ── メモ欄 ── */
+    .memo {
+      width: 220px;
+      background: rgba(255, 253, 220, 0.75);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-radius: 28px;
+      padding: 20px 16px 16px;
+      box-shadow: 0 20px 60px rgba(186, 104, 200, 0.15), 0 4px 16px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .memo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .memo-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #c77800;
+      letter-spacing: 1px;
+    }
+
+    .memo-paste-btn {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #ffe082, #ffca28);
+      color: #7f4c00;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(255, 202, 40, 0.4);
+      transition: transform 0.1s, box-shadow 0.1s;
+      height: auto;
+    }
+
+    .memo-paste-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(255, 202, 40, 0.55);
+    }
+
+    .memo-paste-btn:active {
+      transform: scale(0.93);
+      box-shadow: none !important;
+    }
+
+    .memo-area {
+      flex: 1;
+      resize: none;
+      border: 1.5px solid rgba(255, 202, 40, 0.4);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.6);
+      padding: 12px;
+      font-size: 13px;
+      color: #5d4037;
+      line-height: 1.7;
+      font-family: inherit;
+      outline: none;
+      min-height: 380px;
+    }
+
+    .memo-area::placeholder { color: #c8a96e; }
+    .memo-area:focus { border-color: rgba(255, 160, 0, 0.6); }
+
+    .memo-clear-btn {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      color: #bfaa80;
+      cursor: pointer;
+      transition: color 0.15s;
+      height: auto;
+    }
+
+    .memo-clear-btn:hover { color: #e64a19; }
+
+    /* ── 電卓 ── */
+    .calculator {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-radius: 32px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(186, 104, 200, 0.25), 0 4px 16px rgba(0,0,0,0.08);
+      width: 320px;
+    }
+
+    .deco {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 12px;
+      letter-spacing: 4px;
+    }
+
+    .display {
+      background: rgba(255, 255, 255, 0.75);
+      border-radius: 20px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      text-align: right;
+      border: 1.5px solid rgba(206, 147, 216, 0.4);
+    }
+
+    .display .expr {
+      font-size: 13px;
+      color: #ab79c2;
+      min-height: 18px;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .display .result {
+      font-size: 40px;
+      font-weight: 700;
+      color: #6a3d9c;
+      letter-spacing: 1px;
+      line-height: 1.1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      height: 60px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s, filter 0.1s;
+      outline: none;
+    }
+
+    button:active {
+      transform: scale(0.92);
+      filter: brightness(0.95);
+      box-shadow: none !important;
+    }
+
+    .btn-num {
+      background: linear-gradient(145deg, #ffffff, #f3e5f5);
+      color: #6a3d9c;
+      box-shadow: 0 4px 12px rgba(186, 104, 200, 0.2);
+    }
+
+    .btn-num:hover {
+      box-shadow: 0 6px 16px rgba(186, 104, 200, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-op {
+      background: linear-gradient(145deg, #f8bbd0, #f48fb1);
+      color: #880e4f;
+      box-shadow: 0 4px 12px rgba(244, 143, 177, 0.35);
+    }
+
+    .btn-op:hover {
+      box-shadow: 0 6px 16px rgba(244, 143, 177, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-eq {
+      background: linear-gradient(145deg, #ce93d8, #ab47bc);
+      color: white;
+      box-shadow: 0 4px 14px rgba(171, 71, 188, 0.4);
+      font-size: 22px;
+    }
+
+    .btn-eq:hover {
+      box-shadow: 0 6px 18px rgba(171, 71, 188, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .btn-util {
+      background: linear-gradient(145deg, #b3e5fc, #81d4fa);
+      color: #01579b;
+      box-shadow: 0 4px 12px rgba(129, 212, 250, 0.35);
+    }
+
+    .btn-util:hover {
+      box-shadow: 0 6px 16px rgba(129, 212, 250, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-zero { grid-column: span 2; }
+
+    .btn-15x {
+      background: linear-gradient(145deg, #fff9c4, #fff176);
+      color: #f57f17;
+      box-shadow: 0 4px 12px rgba(255, 241, 118, 0.5);
+      font-size: 15px;
+    }
+
+    .btn-15x:hover {
+      box-shadow: 0 6px 16px rgba(255, 241, 118, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: #b39ddb;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- メモ欄 -->
+    <div class="memo">
+      <div class="memo-header">
+        <span class="memo-title">✏️ メモ</span>
+        <button class="memo-paste-btn" onclick="pasteResult()">結果を貼る</button>
+      </div>
+      <textarea class="memo-area" id="memo" placeholder="ここにメモを書けます&#10;&#10;「結果を貼る」で&#10;計算結果を追記します"></textarea>
+      <button class="memo-clear-btn" onclick="clearMemo()">メモをクリア ✕</button>
+    </div>
+
+    <!-- 電卓 -->
+    <div class="calculator">
+      <div class="deco">✦ ✿ ✦</div>
+
+      <div class="display">
+        <div class="expr" id="expr"></div>
+        <div class="result" id="result">0</div>
+      </div>
+
+      <div class="buttons">
+        <button class="btn-util" onclick="clearAll()">AC</button>
+        <button class="btn-util" onclick="toggleSign()">+/−</button>
+        <button class="btn-util" onclick="percent()">%</button>
+        <button class="btn-op"   onclick="inputOp('÷')">÷</button>
+
+        <button class="btn-15x" style="grid-column: span 2;" onclick="times15()">× 1.5</button>
+        <button class="btn-15x" style="grid-column: span 2;" onclick="times0666()">× 0.666</button>
+
+        <button class="btn-num" onclick="inputNum('7')">7</button>
+        <button class="btn-num" onclick="inputNum('8')">8</button>
+        <button class="btn-num" onclick="inputNum('9')">9</button>
+        <button class="btn-op"  onclick="inputOp('×')">×</button>
+
+        <button class="btn-num" onclick="inputNum('4')">4</button>
+        <button class="btn-num" onclick="inputNum('5')">5</button>
+        <button class="btn-num" onclick="inputNum('6')">6</button>
+        <button class="btn-op"  onclick="inputOp('−')">−</button>
+
+        <button class="btn-num" onclick="inputNum('1')">1</button>
+        <button class="btn-num" onclick="inputNum('2')">2</button>
+        <button class="btn-num" onclick="inputNum('3')">3</button>
+        <button class="btn-op"  onclick="inputOp('+')">+</button>
+
+        <button class="btn-num btn-zero" onclick="inputNum('0')">0</button>
+        <button class="btn-num" onclick="inputDot()">.</button>
+        <button class="btn-eq"  onclick="calculate()">=</button>
+      </div>
+
+      <div class="footer">かわいい電卓 ♡</div>
+    </div>
+
+  </div>
+
+  <script>
+    let current = '0';
+    let stored = null;
+    let op = null;
+    let resetNext = false;
+
+    const exprEl   = document.getElementById('expr');
+    const resultEl = document.getElementById('result');
+    const memoEl   = document.getElementById('memo');
+
+    function render() { resultEl.textContent = current; }
+
+    function inputNum(n) {
+      if (resetNext) { current = n; resetNext = false; }
+      else current = current === '0' ? n : current + n;
+      render();
+    }
+
+    function inputDot() {
+      if (resetNext) { current = '0.'; resetNext = false; render(); return; }
+      if (!current.includes('.')) current += '.';
+      render();
+    }
+
+    function inputOp(o) {
+      if (op && !resetNext) calculate(true);
+      stored = parseFloat(current);
+      op = o;
+      exprEl.textContent = current + ' ' + op;
+      resetNext = true;
+    }
+
+    function calculate(chained = false) {
+      if (op === null || stored === null) return;
+      const b = parseFloat(current);
+      let res;
+      switch (op) {
+        case '+': res = stored + b; break;
+        case '−': res = stored - b; break;
+        case '×': res = stored * b; break;
+        case '÷': res = b !== 0 ? stored / b : '∞'; break;
+      }
+      if (!chained) {
+        exprEl.textContent = stored + ' ' + op + ' ' + b + ' =';
+        op = null; stored = null;
+      }
+      current = typeof res === 'string' ? res : String(+res.toPrecision(12));
+      resetNext = true;
+      render();
+    }
+
+    function clearAll() {
+      current = '0'; stored = null; op = null; resetNext = false;
+      exprEl.textContent = '';
+      render();
+    }
+
+    function toggleSign() {
+      current = String(-parseFloat(current));
+      render();
+    }
+
+    function percent() {
+      current = String(parseFloat(current) / 100);
+      render();
+    }
+
+    function times15() {
+      const val = parseFloat(current);
+      const res = val * 1.5;
+      exprEl.textContent = val + ' × 1.5 =';
+      current = String(+res.toPrecision(12));
+      op = null; stored = null; resetNext = true;
+      render();
+    }
+
+    function times0666() {
+      const val = parseFloat(current);
+      const res = val * 0.666;
+      exprEl.textContent = val + ' × 0.666 =';
+      current = String(+res.toPrecision(12));
+      op = null; stored = null; resetNext = true;
+      render();
+    }
+
+    function pasteResult() {
+      const text = exprEl.textContent
+        ? exprEl.textContent + '  →  ' + current
+        : current;
+      const sep = memoEl.value ? '\n' : '';
+      memoEl.value += sep + text;
+      memoEl.scrollTop = memoEl.scrollHeight;
+    }
+
+    function clearMemo() {
+      memoEl.value = '';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (document.activeElement === memoEl) return;
+      if (e.key >= '0' && e.key <= '9') inputNum(e.key);
+      else if (e.key === '.') inputDot();
+      else if (e.key === '+') inputOp('+');
+      else if (e.key === '-') inputOp('−');
+      else if (e.key === '*') inputOp('×');
+      else if (e.key === '/') { e.preventDefault(); inputOp('÷'); }
+      else if (e.key === 'Enter' || e.key === '=') calculate();
+      else if (e.key === 'Escape') clearAll();
+      else if (e.key === 'Backspace') {
+        if (current.length > 1) current = current.slice(0, -1);
+        else current = '0';
+        render();
+      }
+    });
+  </script>
+</body>
+</html>
