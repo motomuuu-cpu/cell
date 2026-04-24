@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="かわいい電卓">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ce93d8">
+
+  <title>かわいい電卓</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --pink: #f48fb1;
+      --pink-dark: #880e4f;
+      --purple: #ce93d8;
+      --purple-dark: #6a3d9c;
+      --blue: #81d4fa;
+      --blue-dark: #01579b;
+      --yellow: #fff176;
+      --yellow-dark: #f57f17;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(160deg, #fce4ec, #e1bee7, #b3e5fc);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100dvh;
+    }
+
+    /* ── タブバー ── */
+    .tab-bar {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      padding: 10px 16px 0;
+      gap: 8px;
+      flex-shrink: 0;
+      padding-top: max(10px, env(safe-area-inset-top));
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px 0;
+      border: none;
+      border-radius: 14px 14px 0 0;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+      touch-action: manipulation;
+    }
+
+    .tab.active   { background: rgba(255,255,255,0.8); color: var(--purple-dark); box-shadow: 0 -2px 8px rgba(186,104,200,0.2); }
+    .tab.inactive { background: rgba(255,255,255,0.35); color: #ab79c2; }
+
+    /* ── メインカード ── */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      flex: 1;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 2px solid rgba(255,255,255,0.85);
+      border-radius: 0 0 28px 28px;
+      box-shadow: 0 20px 60px rgba(186,104,200,0.2), 0 4px 16px rgba(0,0,0,0.07);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin: 0 16px;
+    }
+
+    .panel { display: none; flex-direction: column; flex: 1; }
+    .panel.active { display: flex; }
+
+    /* ── 電卓パネル ── */
+    #calc-panel { padding: 16px 16px 12px; gap: 12px; }
+
+    .deco { text-align: center; font-size: 18px; letter-spacing: 6px; }
+
+    .display {
+      background: rgba(255,255,255,0.8);
+      border-radius: 20px;
+      padding: 14px 18px;
+      text-align: right;
+      border: 1.5px solid rgba(206,147,216,0.4);
+      flex-shrink: 0;
+    }
+
+    .display .expr {
+      font-size: 13px; color: #ab79c2; min-height: 18px;
+      margin-bottom: 4px; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .display .result {
+      font-size: 42px; font-weight: 800; color: var(--purple-dark);
+      line-height: 1.1; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      flex: 1;
+    }
+
+    button {
+      border: none; border-radius: 16px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 20px; font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.08s, filter 0.08s;
+      outline: none; min-height: 58px;
+      touch-action: manipulation;
+      -webkit-user-select: none; user-select: none;
+    }
+
+    button:active { transform: scale(0.91); filter: brightness(0.93); box-shadow: none !important; }
+
+    .btn-num  { background: linear-gradient(145deg, #ffffff, #f3e5f5); color: var(--purple-dark); box-shadow: 0 4px 10px rgba(186,104,200,0.18); }
+    .btn-op   { background: linear-gradient(145deg, #f8bbd0, var(--pink)); color: var(--pink-dark); box-shadow: 0 4px 10px rgba(244,143,177,0.32); }
+    .btn-eq   { background: linear-gradient(145deg, var(--purple), #ab47bc); color: white; box-shadow: 0 4px 14px rgba(171,71,188,0.38); font-size: 24px; }
+    .btn-util { background: linear-gradient(145deg, #e1f5fe, var(--blue)); color: var(--blue-dark); box-shadow: 0 4px 10px rgba(129,212,250,0.32); }
+    .btn-15x  { background: linear-gradient(145deg, #fffde7, var(--yellow)); color: var(--yellow-dark); box-shadow: 0 4px 10px rgba(255,241,118,0.45); font-size: 15px; }
+
+    .btn-zero  { grid-column: span 2; }
+    .btn-span2 { grid-column: span 2; }
+
+    .footer { text-align: center; font-size: 11px; color: #b39ddb; padding-bottom: 4px; flex-shrink: 0; }
+
+    /* ── メモパネル ── */
+    #memo-panel { padding: 16px; gap: 12px; }
+
+    .memo-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .memo-title  { font-size: 14px; font-weight: 800; color: #c77800; letter-spacing: 1px; }
+
+    .memo-paste-btn {
+      font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+      padding: 6px 14px; border: none; border-radius: 12px;
+      background: linear-gradient(145deg, #ffe082, #ffca28); color: #7f4c00;
+      cursor: pointer; box-shadow: 0 2px 8px rgba(255,202,40,0.4);
+      touch-action: manipulation; min-height: 34px;
+    }
+    .memo-paste-btn:active { transform: scale(0.92); }
+
+    .memo-area {
+      flex: 1; resize: none;
+      border: 1.5px solid rgba(255,202,40,0.4); border-radius: 18px;
+      background: rgba(255,255,255,0.65); padding: 14px;
+      font-size: 14px; color: #5d4037; line-height: 1.8;
+      font-family: 'Nunito', sans-serif; outline: none;
+    }
+    .memo-area::placeholder { color: #c8a96e; }
+    .memo-area:focus { border-color: rgba(255,160,0,0.6); }
+
+    .memo-clear-btn {
+      font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+      padding: 8px; border: none; border-radius: 12px;
+      background: rgba(255,255,255,0.6); color: #bfaa80;
+      cursor: pointer; flex-shrink: 0; touch-action: manipulation; min-height: 34px;
+    }
+    .memo-clear-btn:active { color: #e64a19; transform: scale(0.95); }
+
+    .safe-bottom { height: env(safe-area-inset-bottom, 8px); flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="tab-bar">
+    <button class="tab active" id="tab-calc" onclick="switchTab('calc')">🧮 電卓</button>
+    <button class="tab inactive" id="tab-memo" onclick="switchTab('memo')">✏️ メモ</button>
+  </div>
+
+  <div class="card">
+    <div class="panel active" id="calc-panel">
+      <div class="deco">✦ ✿ ✦</div>
+      <div class="display">
+        <div class="expr" id="expr"></div>
+        <div class="result" id="result">0</div>
+      </div>
+      <div class="buttons">
+        <button class="btn-util"  ontouchstart="" onclick="clearAll()">AC</button>
+        <button class="btn-util"  ontouchstart="" onclick="toggleSign()">+/−</button>
+        <button class="btn-util"  ontouchstart="" onclick="percent()">%</button>
+        <button class="btn-op"    ontouchstart="" onclick="inputOp('÷')">÷</button>
+
+        <button class="btn-15x btn-span2" ontouchstart="" onclick="times15()">× 1.5</button>
+        <button class="btn-15x btn-span2" ontouchstart="" onclick="times0666()">× 0.666</button>
+
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('7')">7</button>
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('8')">8</button>
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('9')">9</button>
+        <button class="btn-op"    ontouchstart="" onclick="inputOp('×')">×</button>
+
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('4')">4</button>
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('5')">5</button>
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('6')">6</button>
+        <button class="btn-op"    ontouchstart="" onclick="inputOp('−')">−</button>
+
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('1')">1</button>
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('2')">2</button>
+        <button class="btn-num"   ontouchstart="" onclick="inputNum('3')">3</button>
+        <button class="btn-op"    ontouchstart="" onclick="inputOp('+')">+</button>
+
+        <button class="btn-num btn-zero" ontouchstart="" onclick="inputNum('0')">0</button>
+        <button class="btn-num"   ontouchstart="" onclick="inputDot()">.</button>
+        <button class="btn-eq"    ontouchstart="" onclick="calculate()">=</button>
+      </div>
+      <div class="footer">かわいい電卓 ♡</div>
+    </div>
+
+    <div class="panel" id="memo-panel">
+      <div class="memo-header">
+        <span class="memo-title">✏️ メモ</span>
+        <button class="memo-paste-btn" ontouchstart="" onclick="pasteResult()">結果を貼る</button>
+      </div>
+      <textarea class="memo-area" id="memo" placeholder="ここにメモを書けます&#10;&#10;「結果を貼る」で&#10;計算結果を追記します"></textarea>
+      <button class="memo-clear-btn" ontouchstart="" onclick="clearMemo()">メモをクリア ✕</button>
+    </div>
+
+    <div class="safe-bottom"></div>
+  </div>
+
+  <script>
+    // Service Worker 登録
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+      });
+    }
+
+    let current = '0', stored = null, op = null, resetNext = false;
+    const exprEl = document.getElementById('expr');
+    const resultEl = document.getElementById('result');
+    const memoEl = document.getElementById('memo');
+
+    function render() { resultEl.textContent = current; }
+
+    function inputNum(n) {
+      if (resetNext) { current = n; resetNext = false; }
+      else current = current === '0' ? n : current + n;
+      render();
+    }
+
+    function inputDot() {
+      if (resetNext) { current = '0.'; resetNext = false; render(); return; }
+      if (!current.includes('.')) current += '.';
+      render();
+    }
+
+    function inputOp(o) {
+      if (op && !resetNext) calculate(true);
+      stored = parseFloat(current); op = o;
+      exprEl.textContent = current + ' ' + op;
+      resetNext = true;
+    }
+
+    function calculate(chained = false) {
+      if (op === null || stored === null) return;
+      const b = parseFloat(current);
+      let res;
+      switch (op) {
+        case '+': res = stored + b; break;
+        case '−': res = stored - b; break;
+        case '×': res = stored * b; break;
+        case '÷': res = b !== 0 ? stored / b : '∞'; break;
+      }
+      if (!chained) {
+        exprEl.textContent = stored + ' ' + op + ' ' + b + ' =';
+        op = null; stored = null;
+      }
+      current = typeof res === 'string' ? res : String(+res.toPrecision(12));
+      resetNext = true;
+      render();
+    }
+
+    function clearAll() {
+      current = '0'; stored = null; op = null; resetNext = false;
+      exprEl.textContent = ''; render();
+    }
+
+    function toggleSign() { current = String(-parseFloat(current)); render(); }
+    function percent() { current = String(parseFloat(current) / 100); render(); }
+
+    function times15() {
+      const val = parseFloat(current);
+      exprEl.textContent = val + ' × 1.5 =';
+      current = String(+(val * 1.5).toPrecision(12));
+      op = null; stored = null; resetNext = true; render();
+    }
+
+    function times0666() {
+      const val = parseFloat(current);
+      exprEl.textContent = val + ' × 0.666 =';
+      current = String(+(val * 0.666).toPrecision(12));
+      op = null; stored = null; resetNext = true; render();
+    }
+
+    function pasteResult() {
+      const text = exprEl.textContent ? exprEl.textContent + '  →  ' + current : current;
+      memoEl.value += (memoEl.value ? '\n' : '') + text;
+      memoEl.scrollTop = memoEl.scrollHeight;
+    }
+
+    function clearMemo() { memoEl.value = ''; }
+
+    function switchTab(tab) {
+      document.getElementById('calc-panel').classList.toggle('active', tab === 'calc');
+      document.getElementById('memo-panel').classList.toggle('active', tab === 'memo');
+      document.getElementById('tab-calc').classList.toggle('active', tab === 'calc');
+      document.getElementById('tab-calc').classList.toggle('inactive', tab !== 'calc');
+      document.getElementById('tab-memo').classList.toggle('active', tab === 'memo');
+      document.getElementById('tab-memo').classList.toggle('inactive', tab !== 'memo');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (document.activeElement === memoEl) return;
+      if (e.key >= '0' && e.key <= '9') inputNum(e.key);
+      else if (e.key === '.') inputDot();
+      else if (e.key === '+') inputOp('+');
+      else if (e.key === '-') inputOp('−');
+      else if (e.key === '*') inputOp('×');
+      else if (e.key === '/') { e.preventDefault(); inputOp('÷'); }
+      else if (e.key === 'Enter' || e.key === '=') calculate();
+      else if (e.key === 'Escape') clearAll();
+      else if (e.key === 'Backspace') {
+        if (current.length > 1) current = current.slice(0, -1);
+        else current = '0';
+        render();
+      }
+    });
+  </script>
+</body>
+</html>
